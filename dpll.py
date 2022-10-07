@@ -50,18 +50,37 @@ def nullClauses(cnfDict):
     return (False, nullClauses) if nullClauses == 0 else (True, nullClauses)
 
 
-def dpll(cnfDict, literal, model=[]):
-    cnfDict = cnfHasClauseWithX(cnfDict, literal)
-    model.append(literal)
-
-    if nullClauses(cnfDict)[0]:
-        return False, nullClauses(cnfDict)[1]
-    if cnfDict == {}:
-        return True, 0
-
+def dpll(cnfDict):
     newLiteral = mostPopularLiteral(cnfDict)
+    cnfDict = cnfHasClauseWithX(cnfDict, newLiteral)
+    fitness = 0
 
-    return dpll(cnfDict, newLiteral) or dpll(cnfDict, not newLiteral)
+    while nullClauses(cnfDict)[0] and cnfDict != {}:
+        newLiteral = mostPopularLiteral(cnfDict)
+        cnfDict = cnfHasClauseWithX(cnfDict, newLiteral)
+
+    hasNullClause, numNulls = nullClauses(cnfDict)
+
+    if not hasNullClause:
+        fitness = len(cnfDict) - numNulls
+    elif cnfDict == {}:
+        fitness = len(cnfDict)
+
+    return fitness
+
+
+# def dpll(cnfDict, literal, model=[]):
+#     cnfDict = cnfHasClauseWithX(cnfDict, literal)
+#     model.append(literal)
+
+#     if nullClauses(cnfDict)[0]:
+#         return False, nullClauses(cnfDict)[1]
+#     if cnfDict == {}:
+#         return True, 0
+
+#     newLiteral = mostPopularLiteral(cnfDict)
+
+#     return dpll(cnfDict, newLiteral) or dpll(cnfDict, not newLiteral)
 
 
 for file in os.listdir("CNF Formulas"):
@@ -73,12 +92,12 @@ for file in os.listdir("CNF Formulas"):
 
     currSAT = cnfToDict(f"./CNF Formulas/{file}")
 
-    sat, fitness = dpll(currSAT, mostPopularLiteral(currSAT), [])
+    fit = dpll(currSAT)
 
     currProcess = time.process_time()
     totalTime = currProcess - lastProcess
 
-    logData("dpll.csv", [file, totalTime, sat])
+    logData("dpll.csv", [file, totalTime, fit])
 
 for file in os.listdir("HARD CNF Formulas"):
     if isInCol("dpll.csv", "fileName", file):
@@ -89,9 +108,9 @@ for file in os.listdir("HARD CNF Formulas"):
 
     currSAT = cnfToDict(f"./HARD CNF Formulas/{file}")
 
-    sat, fitness = dpll(currSAT, mostPopularLiteral(currSAT))
+    fit = dpll(currSAT)
 
     currProcess = time.process_time()
     totalTime = currProcess - lastProcess
 
-    logData("dpll.csv", [file, totalTime, sat])
+    logData("dpll.csv", [file, totalTime, fit])
